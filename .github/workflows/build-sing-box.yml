@@ -45,7 +45,7 @@ jobs:
           wget https://downloads.immortalwrt.org/releases/${{ matrix.tag }}/targets/${target}/${subtarget}/config.buildinfo -O .config
           make defconfig
 
-      # 2.5 (НОВОЕ) Восстанавливаем кэш
+      # 2.5 Восстанавливаем кэш
       - name: Cache build assets
         uses: actions/cache@v4
         with:
@@ -81,11 +81,10 @@ jobs:
       # 4. (ИСПРАВЛЕНО) Собираем .ipk пакеты
       - name: Make ipks for sing-box
         run: |
-          # Цель 'compile' сама вызовет 'download' и 'prepare'.
-          # Убираем 'clean', который вызывал ошибку.
-          # Добавляем V=s для подробного лога, если снова будет ошибка.
-          make package/feeds/shtorm7/sing-box/compile -j $(nproc) V=s
-          make package/feeds/shtorm7/luci-app-sing-box/compile -j $(nproc) V=s
+          # Путь к make-цели пакета - это 'package/<имя_пакета>/compile'
+          # Имя фида (shtorm7) не является частью цели make
+          make package/sing-box/compile -j $(nproc) V=s
+          make package/luci-app-sing-box/compile -j $(nproc) V=s
 
       # 5. Готовим артефакты
       - name: Prepare artifacts
@@ -98,8 +97,9 @@ jobs:
           mkdir -p singboxrelease
           postfix="${tag_name}_v${{ matrix.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}"
           
-          cp bin/packages/${{ matrix.build_env.pkgarch }}/shtorm7/sing-box_*.ipk singboxrelease/sing-box_${postfix}.ipk
-          cp bin/packages/${{ matrix.build_env.pkgarch }}/shtorm7/luci-app-sing-box_*.ipk singboxrelease/luci-app-sing-box_${postfix}.ipk
+          # Путь к .ipk файлам также НЕ содержит имя фида
+          cp bin/packages/${{ matrix.build_env.pkgarch }}/base/sing-box_*.ipk singboxrelease/sing-box_${postfix}.ipk
+          cp bin/packages/${{ matrix.build_env.pkgarch }}/luci/luci-app-sing-box_*.ipk singboxrelease/luci-app-sing-box_${postfix}.ipk
 
       # 6. Публикуем Релиз (только по тегу)
       - name: Release (publish to GitHub Releases)
